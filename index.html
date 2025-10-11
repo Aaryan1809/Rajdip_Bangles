@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Rajdip Bangles</title>
+
+        <!-- Tailwind CSS for styling -->
+        <script src="https://cdn.tailwindcss.com"></script>
+
+        <!-- Lucide Icons Library -->
+        <script src="https://unpkg.com/lucide@latest"></script>
+
+        <!-- Google Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Montserrat:wght@400;500;600&display=swap"
+            rel="stylesheet">
+
+        <!-- Firebase SDKs -->
+        <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-storage-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+
+        <style>
+            :root {
+                --bg-color: #FFF8F0;
+                /* Soft Peach */
+                --text-color: #4E4239;
+                /* Dark Warm Brown */
+                --accent-color: #C5A572;
+                /* Classic Gold */
+                --light-accent: #F9EFE2;
+                /* Darker Cream */
+                --border-color: #E6DCD1;
+                /* Soft Border */
+            }
+
+            body {
+                font-family: 'Montserrat', sans-serif;
+                background-color: var(--bg-color);
+                color: var(--text-color);
+                scroll-behavior: smooth;
+            }
+
+            .font-serif {
+                font-family: 'Playfair Display', serif;
+            }
+
+            /* --- PRELOADER & ANIMATIONS --- */
+
+            #preloader {
+                transition: opacity 2s ease-out;
+            }
+
+            #preloader.hidden {
+                opacity: 0;
+                pointer-events: none;
+            }
+
+            body.loading #main-nav,
+            body.loading main,
+            body.loading footer {
+                opacity: 0;
+            }
+
+            #main-nav,
+            #home-page .hero-section {
+                opacity: 0;
+                transition: opacity 1.8s ease-out;
+            }
+
+            #main-nav.revealed,
+            #home-page .hero-section.revealed {
+                opacity: 1;
+            }
+
+            #main-nav.revealed {
+                transition-delay: 0.5s;
+            }
+
+            #home-page .hero-section.revealed {
+                transition-delay: 1s;
+            }
+
+            .page {
+                display: none;
+                animation: fadeIn 1.8s ease-in-out;
+            }
+
+            .page.active {
+                display: block;
+            }
+
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                }
+
+                to {
+                    opacity: 1;
+                }
+            }
+
+            .animate-on-scroll {
+                opacity: 0;
+                transform: translateY(40px);
+                transition: opacity 1.8s ease-out, transform 1.8s ease-out;
+            }
+
+            .animate-on-scroll.visible {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            .hero-content>* {
+                opacity: 0;
+                animation: fadeInUp 2s ease-out forwards;
+            }
+
+            .hero-content>*:nth-child(1) {
+                animation-delay: 1.3s;
+            }
+
+            .hero-content>*:nth-child(2) {
+                animation-delay: 1.6s;
+            }
+
+            .hero-content>*:nth-child(3) {
+                animation-delay: 1.9s;
+            }
+
+            .hero-content>*:nth-child(4) {
+                animation-delay: 2.2s;
+            }
+
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(30px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            /* Custom scrollbar */
+            ::-webkit-scrollbar {
+                width: 8px;
+            }
+
+            ::-webkit-scrollbar-track {
+                background: var(--light-accent);
+            }
+
+            ::-webkit-scrollbar-thumb {
+                background-color: var(--accent-color);
+                border-radius: 10px;
+                border: 2px solid var(--light-accent);
+            }
+
+            /* Spinner for loading state */
+            .spinner {
+                border: 2px solid #f3f3f3;
+                border-top: 2px solid var(--accent-color);
+                border-radius: 50%;
+                width: 16px;
+                height: 16px;
+                animation: spin 1s linear infinite;
+            }
+
+            @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+        </style>
+    </head>
+
+    <body class="loading">
+        <!-- Preloader -->
+        <div id="preloader" class="fixed inset-0 bg-[var(--bg-color)] z-[100] flex items-center justify-center">
+            <div class="text-center">
+                <h1 class="text-5xl font-serif font-bold text-[var(--accent-color)] animate-pulse">
+                    Rajdip Bangles
+                </h1>
+            </div>
+        </div>
+
+        <!-- Categorization Modal -->
+        <div id="category-modal"
+            class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg p-8 w-full max-w-md border shadow-2xl">
+                <h2 class="text-2xl font-bold text-[var(--text-color)] mb-4 font-serif">Categorize Item</h2>
+                <img id="modal-image-preview" src="" alt="Preview"
+                    class="w-full h-48 object-contain rounded-lg mb-4 bg-gray-100" />
+                <div class="mb-4">
+                    <label for="modal-item-name" class="block text-sm font-medium text-gray-600 mb-1">Item Name</label>
+                    <input type="text" id="modal-item-name"
+                        class="w-full px-3 py-2 bg-gray-50 text-[var(--text-color)] border border-[var(--border-color)] rounded-lg focus:outline-none focus:border-[var(--accent-color)]">
+                </div>
+                <div class="mb-6">
+                    <label for="modal-item-category"
+                        class="block text-sm font-medium text-gray-600 mb-1">Category</label>
+                    <select id="modal-item-category"
+                        class="w-full px-3 py-2 bg-gray-50 text-[var(--text-color)] border border-[var(--border-color)] rounded-lg focus:outline-none focus:border-[var(--accent-color)]">
+                        <!-- Options will be populated by JS -->
+                    </select>
+                </div>
+                <div class="flex justify-end gap-4">
+                    <button id="modal-cancel-btn"
+                        class="px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300">Skip</button>
+                    <button id="modal-save-btn"
+                        class="px-4 py-2 bg-[var(--accent-color)] text-white font-semibold rounded-lg hover:opacity-90">Save
+                        Item</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Navigation -->
+        <nav id="main-nav"
+            class="bg-[var(--bg-color)]/80 backdrop-blur-lg sticky top-0 z-50 border-b border-[var(--border-color)]">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="flex justify-between items-center h-20">
+                    <div class="text-3xl font-serif font-bold text-[var(--accent-color)] cursor-pointer"
+                        data-page="home">
+                        Rajdip Bangles
+                    </div>
+                    <!-- Desktop Menu -->
+                    <div class="hidden md:flex items-center gap-4">
+                        <button data-page="home"
+                            class="nav-link font-semibold px-4 py-2 rounded-lg transition text-[var(--accent-color)]">Home</button>
+                        <button data-page="gallery"
+                            class="nav-link font-semibold px-4 py-2 rounded-lg transition text-[var(--text-color)] hover:text-[var(--accent-color)]">Gallery</button>
+                        <button data-page="contact"
+                            class="nav-link font-semibold px-4 py-2 rounded-lg transition text-[var(--text-color)] hover:text-[var(--accent-color)]">Contact</button>
+                        <button id="admin-nav-link" data-page="adminLogin"
+                            class="nav-link flex items-center gap-2 font-semibold px-4 py-2 rounded-lg text-[var(--text-color)] bg-[var(--light-accent)] hover:bg-opacity-80 transition">
+                            <i data-lucide="log-in" class="w-4 h-4"></i> Admin
+                        </button>
+                    </div>
+                    <!-- Mobile Menu Button -->
+                    <div class="md:hidden">
+                        <button id="mobile-menu-button">
+                            <i data-lucide="menu" class="text-[var(--text-color)] w-7 h-7"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- Mobile Menu -->
+            <div id="mobile-menu"
+                class="hidden md:hidden bg-[var(--bg-color)] border-t border-[var(--border-color)] py-4">
+                <button data-page="home"
+                    class="mobile-nav-link block w-full text-left font-semibold p-4 text-[var(--text-color)] hover:bg-[var(--light-accent)]">Home</button>
+                <button data-page="gallery"
+                    class="mobile-nav-link block w-full text-left font-semibold p-4 text-[var(--text-color)] hover:bg-[var(--light-accent)]">Gallery</button>
+                <button data-page="contact"
+                    class="mobile-nav-link block w-full text-left font-semibold p-4 text-[var(--text-color)] hover:bg-[var(--light-accent)]">Contact</button>
+                <button id="mobile-admin-link" data-page="adminLogin"
+                    class="mobile-nav-link block w-full text-left font-semibold p-4 text-[var(--text-color)] hover:bg-[var(--light-accent)]">Admin
+                    Login</button>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main>
+            <!-- Home Page -->
+            <div id="home-page" class="page active">
+                <!-- Hero Section -->
+                <div
+                    class="hero-section relative h-screen flex items-center justify-center text-center overflow-hidden">
+                    <div class="absolute inset-0 bg-black z-0">
+                        <img src="https://images.unsplash.com/photo-1620656416297-c87532b2a60c?w=1920&h=1080&fit=crop&q=80"
+                            alt="Jewelry Background" class="w-full h-full object-cover" />
+                        <div class="absolute inset-0 bg-[var(--text-color)] opacity-60"></div>
+                    </div>
+                    <div class="relative z-10 p-4 hero-content">
+                        <!-- <i data-lucide="sparkles" class="text-[var(--accent-color)] w-12 h-12 mx-auto mb-4"></i> -->
+                        <h1 class="text-6xl md:text-8xl font-serif font-bold mb-4 text-white tracking-tight">Timeless
+                            Elegance</h1>
+                        <p class="text-xl md:text-2xl text-gray-200 mb-8 max-w-2xl mx-auto">Discover our exquisite
+                            collection of handcrafted jewelry</p>
+                        <div class="flex gap-4 justify-center">
+                            <button data-page="gallery"
+                                class="bg-[var(--accent-color)] text-white font-bold py-3 px-8 rounded-lg hover:opacity-90 transition-all duration-300">Explore
+                                Collection</button>
+                            <button data-page="contact"
+                                class="bg-transparent border-2 border-[var(--accent-color)] text-white font-bold py-3 px-8 rounded-lg hover:bg-[var(--accent-color)] transition-all duration-300">Contact
+                                Us</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Collections Section -->
+                <div class="py-20 px-4 bg-[var(--bg-color)]">
+                    <div class="max-w-7xl mx-auto">
+                        <h2
+                            class="text-5xl font-serif font-bold text-center mb-12 text-[var(--text-color)] animate-on-scroll">
+                            Our Collections</h2>
+                        <div id="home-categories"
+                            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-on-scroll">
+                            <!-- Category items will be inserted here by JS -->
+                        </div>
+                    </div>
+                </div>
+                <!-- Home Contact Section -->
+                <div id="home-contact-section" class="py-20 px-4 bg-[var(--light-accent)]">
+                    <div class="max-w-4xl mx-auto text-center">
+                        <h2
+                            class="text-5xl font-serif font-bold text-center mb-12 text-[var(--text-color)] animate-on-scroll">
+                            Get In Touch</h2>
+                        <div id="home-contact-info" class="grid md:grid-cols-3 gap-8 animate-on-scroll">
+                            <!-- Contact info will be inserted here by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gallery Page -->
+            <div id="gallery-page" class="page">
+                <div class="min-h-screen bg-[var(--bg-color)] py-20 px-4">
+                    <div class="max-w-7xl mx-auto">
+                        <h1 class="text-6xl font-serif font-bold text-center mb-12 text-[var(--text-color)]">Our
+                            Collection</h1>
+                        <div id="gallery-filters" class="flex flex-wrap justify-center gap-4 mb-12">
+                            <!-- Filter buttons will be inserted here by JS -->
+                        </div>
+                        <div id="gallery-grid"
+                            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                            <!-- Gallery items will be inserted here by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Page -->
+            <div id="contact-page" class="page">
+                <div class="min-h-screen bg-[var(--bg-color)] py-20 px-4 flex items-center justify-center">
+                    <div class="max-w-4xl mx-auto text-center">
+                        <h1 class="text-6xl font-serif font-bold text-[var(--text-color)] mb-8">Get In Touch</h1>
+                        <p class="text-lg text-gray-600 mb-12">We are here to help you find the perfect piece of
+                            jewelry. Contact us through any of the channels below.</p>
+                        <div id="contact-info" class="grid md:grid-cols-3 gap-8">
+                            <!-- Contact info will be inserted here by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Login Page -->
+            <div id="adminLogin-page" class="page">
+                <div class="min-h-screen bg-[var(--bg-color)] flex items-center justify-center px-4">
+                    <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-sm border border-[var(--border-color)]">
+                        <h2 class="text-3xl font-serif font-bold text-center text-[var(--text-color)] mb-6">Admin Login
+                        </h2>
+                        <form id="admin-login-form">
+                            <input id="admin-email-input" type="email" placeholder="Enter email"
+                                class="w-full px-4 py-3 bg-gray-50 text-[var(--text-color)] border-2 border-[var(--border-color)] rounded-lg mb-4 focus:outline-none focus:border-[var(--accent-color)]"
+                                required />
+                            <input id="admin-password-input" type="password" placeholder="Enter password"
+                                class="w-full px-4 py-3 bg-gray-50 text-[var(--text-color)] border-2 border-[var(--border-color)] rounded-lg mb-4 focus:outline-none focus:border-[var(--accent-color)]"
+                                required />
+                            <button type="submit"
+                                class="w-full bg-[var(--accent-color)] text-white font-bold py-3 rounded-lg hover:opacity-90 transition-all">Login</button>
+                        </form>
+                        <p id="login-error-msg" class="text-center text-sm text-red-600 mt-4 hidden"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Panel Page -->
+            <div id="admin-page" class="page">
+                <div class="min-h-screen bg-[var(--bg-color)] py-12 px-4">
+                    <div class="max-w-7xl mx-auto">
+                        <div class="flex justify-between items-center mb-8">
+                            <h1 class="text-4xl font-serif font-bold text-[var(--text-color)]">Admin Panel</h1>
+                            <button id="logout-button"
+                                class="flex items-center gap-2 bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-800 font-semibold transition">
+                                <i data-lucide="log-out" class="w-5 h-5"></i> Logout
+                            </button>
+                        </div>
+
+                        <div class="bg-white p-8 rounded-lg border border-[var(--border-color)] shadow-lg mb-8">
+                            <h2 class="text-2xl font-serif font-bold text-[var(--text-color)] mb-4">Upload Jewelry
+                                Images</h2>
+                            <label
+                                class="flex flex-col items-center justify-center w-full h-56 border-2 border-dashed border-[var(--border-color)] rounded-lg cursor-pointer hover:border-[var(--accent-color)] transition bg-gray-50 hover:bg-gray-100">
+                                <i data-lucide="upload" class="text-[var(--accent-color)] mb-2 w-10 h-10"></i>
+                                <p class="text-lg font-semibold text-[var(--text-color)]">Click to upload images</p>
+                                <p class="text-sm text-gray-500">You will be asked to select a category for each image.
+                                </p>
+                                <input id="image-upload-input" type="file" class="hidden" multiple accept="image/*" />
+                            </label>
+                            <p id="uploading-text" class="text-center mt-4 text-[var(--accent-color)] hidden">Processing
+                                images...</p>
+                        </div>
+
+                        <div class="bg-white p-8 rounded-lg border border-[var(--border-color)] shadow-lg">
+                            <h2 id="manage-items-header"
+                                class="text-2xl font-serif font-bold text-[var(--text-color)] mb-6">Manage Items (0)
+                            </h2>
+                            <div id="admin-items-grid"
+                                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                <!-- Admin items will be inserted here by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer id="main-footer" class="bg-[var(--light-accent)] border-t border-[var(--border-color)] py-10 px-4">
+            <div class="max-w-6xl mx-auto text-center text-gray-600">
+                <p>&copy; 2025 Rajdip Bangles. All Rights Reserved.</p>
+            </div>
+        </footer>
+
+        <script>
+            // --- IMPORTANT: PASTE YOUR FIREBASE CONFIG HERE ---
+            // Replace this with the firebaseConfig object you got from the Firebase console
+            // Your web app's Firebase configuration
+            // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+            const firebaseConfig = {
+                apiKey: "AIzaSyCRcokTh5jiAkpOCR7LTlRFS6zQ8UTBK0U",
+                authDomain: "rajdip-bangles.firebaseapp.com",
+                projectId: "rajdip-bangles",
+                storageBucket: "rajdip-bangles.firebasestorage.app",
+                messagingSenderId: "291761844623",
+                appId: "1:291761844623:web:251f4dcfaded8e2fdb9bfa",
+                measurementId: "G-MR2B779DY8"
+            };
+
+            // NEW: Check for placeholder config and initialize Firebase safely
+            let db, storage, auth;
+            try {
+                if (firebaseConfig.apiKey.startsWith("PASTE_YOUR")) {
+                    throw new Error("Firebase config is not set. Please paste your firebaseConfig object.");
+                }
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                storage = firebase.storage();
+                auth = firebase.auth();
+            } catch (error) {
+                console.error("Firebase Initialization Error:", error.message);
+                // We will alert the user later in the DOMContentLoaded event to ensure the page is visible
+            }
+
+
+            document.addEventListener('DOMContentLoaded', () => {
+                // --- STATE MANAGEMENT ---
+                let state = {
+                    currentPage: 'home',
+                    isAdmin: false,
+                    selectedCategory: 'all',
+                    jewelry: [],
+                };
+
+                // Modal state
+                let filesToProcess = [];
+                let currentFileIndex = 0;
+
+                // --- DATA ---
+                const categories = ['Bangles', 'Kadas', 'Bracelets', 'Chains (Men)', 'Chains (Women)', 'Rings', 'Earrings'];
+                const ownerInfo = {
+                    name: 'Mihir Soni',
+                    phone: '+91 XXXXXXXXXX',
+                    email: 'mihir@rajdipbangles.com',
+                    whatsapp: '919824088931',
+                };
+                const categoryImages = {
+                    'Bangles': 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=800&h=600&fit=crop&q=80',
+                    'Kadas': 'https://images.unsplash.com/photo-1593032469822-d5678a87b8b4?w=800&h=600&fit=crop&q=80',
+                    'Bracelets': 'https://images.unsplash.com/photo-1610901237889-551d02e53b49?w=800&h=600&fit=crop&q=80',
+                    'Chains (Men)': 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=800&h=600&fit=crop&q=80',
+                    'Chains (Women)': 'https://images.unsplash.com/photo-1611652022417-a546755e1ae2?w=800&h=600&fit=crop&q=80',
+                    'Rings': 'https://images.unsplash.com/photo-1598562445943-3e05c8335951?w=800&h=600&fit=crop&q=80',
+                    'Earrings': 'https://images.unsplash.com/photo-1612178742576-8a8b13b7b0f1?w=800&h=600&fit=crop&q=80'
+                };
+
+                // --- RENDER FUNCTIONS (Update UI based on state) ---
+
+                const renderGallery = () => {
+                    const galleryGrid = document.getElementById('gallery-grid');
+                    galleryGrid.innerHTML = '';
+
+                    const filtered = state.selectedCategory === 'all'
+                        ? state.jewelry
+                        : state.jewelry.filter(item => item.category === state.selectedCategory);
+
+                    if (filtered.length === 0) {
+                        galleryGrid.innerHTML = `<div class="col-span-full text-center py-20">
+                        <i data-lucide="shopping-bag" class="mx-auto w-24 h-24 text-gray-400 mb-4"></i>
+                        <h3 class="text-3xl font-serif text-[var(--text-color)]">Collection is Empty</h3>
+                        <p class="text-gray-500 mt-2">New designs are coming soon. Stay tuned!</p>
+                    </div>`;
+                    } else {
+                        filtered.forEach(item => {
+                            const div = document.createElement('div');
+                            div.className = 'bg-white rounded-lg overflow-hidden group shadow-lg border border-[var(--border-color)]';
+                            div.innerHTML = `
+                            <div class="aspect-square overflow-hidden">
+                                <img src="${item.imageUrl}" alt="${item.name}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                            </div>
+                            <div class="p-4">
+                                <p class="text-[var(--accent-color)] text-sm font-semibold">${item.category}</p>
+                                <h3 class="text-[var(--text-color)] text-lg font-bold capitalize font-serif">${item.name}</h3>
+                            </div>`;
+                            galleryGrid.appendChild(div);
+                        });
+                    }
+                    lucide.createIcons();
+                };
+
+                const renderAdminItems = () => {
+                    const adminGrid = document.getElementById('admin-items-grid');
+                    const header = document.getElementById('manage-items-header');
+                    adminGrid.innerHTML = '';
+                    header.textContent = `Manage Items (${state.jewelry.length})`;
+
+                    if (state.jewelry.length === 0) {
+                        adminGrid.innerHTML = `<p class="col-span-full text-center text-gray-500 py-10">No items uploaded yet.</p>`;
+                    } else {
+                        state.jewelry.forEach(item => {
+                            const div = document.createElement('div');
+                            div.className = 'bg-white rounded-lg overflow-hidden border border-[var(--border-color)] flex flex-col';
+                            div.innerHTML = `
+                            <div class="aspect-square bg-gray-100">
+                                <img src="${item.imageUrl}" alt="${item.name}" class="w-full h-full object-cover" />
+                            </div>
+                            <div class="p-4 flex flex-col flex-grow">
+                                <p class="text-xs font-bold text-[var(--accent-color)] uppercase">${item.category}</p>
+                                <h3 class="font-bold text-[var(--text-color)] capitalize text-md mt-1 mb-3">${item.name}</h3>
+                                <div class="mt-auto">
+                                   <button data-id="${item.id}" class="delete-item-btn w-full flex items-center justify-center gap-2 bg-red-700 text-white px-3 py-2 rounded-lg hover:bg-red-800 font-semibold transition text-sm">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
+                                    </button>
+                                </div>
+                            </div>`;
+                            adminGrid.appendChild(div);
+                        });
+                    }
+                    lucide.createIcons();
+                };
+
+                const navigate = (page) => {
+                    state.currentPage = page;
+
+                    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+
+                    const activePage = document.getElementById(`${page}-page`);
+                    if (activePage) activePage.classList.add('active');
+
+                    document.querySelectorAll('.nav-link').forEach(link => {
+                        const linkPage = link.dataset.page;
+                        const isActive = (linkPage === 'adminLogin' && (page === 'admin' || page === 'adminLogin')) || linkPage === page;
+
+                        if (isActive) {
+                            link.classList.add('text-[var(--accent-color)]');
+                            link.classList.remove('text-[var(--text-color)]');
+                        } else {
+                            link.classList.add('text-[var(--text-color)]');
+                            link.classList.remove('text-[var(--accent-color)]');
+                        }
+                    });
+
+                    const nav = document.getElementById('main-nav');
+                    const footer = document.getElementById('main-footer');
+                    if (page === 'adminLogin') {
+                        nav.classList.add('hidden');
+                        footer.classList.add('hidden');
+                    } else {
+                        nav.classList.remove('hidden');
+                        footer.classList.remove('hidden');
+                    }
+
+                    window.scrollTo(0, 0);
+                };
+
+                // --- FIREBASE LOGIC FUNCTIONS ---
+                const processFileQueue = async () => {
+                    if (currentFileIndex >= filesToProcess.length) {
+                        document.getElementById('uploading-text').classList.add('hidden');
+                        filesToProcess = [];
+                        currentFileIndex = 0;
+                        return;
+                    }
+
+                    const file = filesToProcess[currentFileIndex];
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        document.getElementById('modal-image-preview').src = event.target.result;
+                        const defaultName = file.name.split('.')[0].replace(/_/g, ' ');
+                        document.getElementById('modal-item-name').value = defaultName;
+                        document.getElementById('category-modal').classList.remove('hidden');
+                    };
+                    reader.readAsDataURL(file);
+                };
+
+                const handleImageUpload = (files) => {
+                    if (!db) {
+                        alert("Database connection is not available. Please check your Firebase configuration.");
+                        return;
+                    }
+                    if (files.length === 0) return;
+                    filesToProcess = Array.from(files);
+                    currentFileIndex = 0;
+                    document.getElementById('uploading-text').classList.remove('hidden');
+                    processFileQueue();
+                };
+
+                const saveItemToFirebase = async () => {
+                    const file = filesToProcess[currentFileIndex];
+                    const itemName = document.getElementById('modal-item-name').value || 'Untitled';
+                    const itemCategory = document.getElementById('modal-item-category').value;
+
+                    try {
+                        const filePath = `jewelry/${Date.now()}_${file.name}`;
+                        const fileRef = storage.ref(filePath);
+                        const uploadTask = await fileRef.put(file);
+                        const imageUrl = await uploadTask.ref.getDownloadURL();
+
+                        await db.collection('jewelry').add({
+                            name: itemName,
+                            category: itemCategory,
+                            imageUrl: imageUrl,
+                            storagePath: filePath,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+
+                    } catch (error) {
+                        console.error("Error uploading item: ", error);
+                        alert("There was an error uploading the item. Please try again.");
+                    }
+
+                    document.getElementById('category-modal').classList.add('hidden');
+                    currentFileIndex++;
+                    processFileQueue();
+                };
+
+                const deleteItem = async (id) => {
+                    if (!confirm("Are you sure you want to delete this item? This cannot be undone.")) return;
+
+                    try {
+                        const item = state.jewelry.find(j => j.id === id);
+                        if (!item) throw new Error("Item not found in local state.");
+
+                        await db.collection('jewelry').doc(id).delete();
+                        await storage.ref(item.storagePath).delete();
+                    } catch (error) {
+                        console.error("Error deleting item:", error);
+                        alert("Could not delete the item. Please try again.");
+                    }
+                };
+
+                // --- INITIAL PAGE SETUP ---
+                const renderInitialContent = () => {
+                    const homeCategoriesContainer = document.getElementById('home-categories');
+                    homeCategoriesContainer.innerHTML = '';
+                    categories.forEach(cat => {
+                        const div = document.createElement('div');
+                        div.className = 'group relative overflow-hidden rounded-lg cursor-pointer shadow-lg';
+                        div.dataset.page = 'gallery';
+                        div.dataset.category = cat;
+                        div.innerHTML = `
+                        <img src="${categoryImages[cat]}" alt="${cat}" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110" />
+                        <div class="absolute inset-0 bg-black bg-opacity-50 flex items-end p-6">
+                            <div>
+                                <h3 class="text-3xl font-serif font-bold text-white">${cat}</h3>
+                                <p class="text-amber-300">${state.jewelry.filter(i => i.category === cat).length} pieces</p>
+                            </div>
+                        </div>`;
+                        homeCategoriesContainer.appendChild(div);
+                    });
+
+                    const galleryFiltersContainer = document.getElementById('gallery-filters');
+                    galleryFiltersContainer.innerHTML = `<button data-category="all" class="filter-btn py-2 px-6 rounded-lg font-semibold transition bg-[var(--accent-color)] text-white">All</button>`;
+                    categories.forEach(cat => {
+                        const button = document.createElement('button');
+                        button.dataset.category = cat;
+                        button.className = 'filter-btn py-2 px-6 rounded-lg font-semibold transition bg-white text-[var(--text-color)] hover:bg-[var(--light-accent)]';
+                        button.textContent = cat;
+                        galleryFiltersContainer.appendChild(button);
+                    });
+
+                    const contactHTML = `
+                    <a href="tel:${ownerInfo.phone}" class="group p-6 rounded-lg hover:bg-white/50 transition">
+                        <i data-lucide="phone" class="w-12 h-12 text-[var(--accent-color)] mx-auto mb-4 transition-transform group-hover:scale-110"></i>
+                        <h3 class="text-xl font-serif font-bold text-[var(--text-color)] mb-2">Phone</h3><p class="text-gray-600">${ownerInfo.phone}</p>
+                    </a>
+                    <a href="mailto:${ownerInfo.email}" class="group p-6 rounded-lg hover:bg-white/50 transition">
+                        <i data-lucide="mail" class="w-12 h-12 text-[var(--accent-color)] mx-auto mb-4 transition-transform group-hover:scale-110"></i>
+                        <h3 class="text-xl font-serif font-bold text-[var(--text-color)] mb-2">Email</h3><p class="text-gray-600">${ownerInfo.email}</p>
+                    </a>
+                    <a href="https://wa.me/${ownerInfo.whatsapp}" target="_blank" rel="noopener noreferrer" class="group p-6 rounded-lg hover:bg-white/50 transition">
+                        <i data-lucide="message-circle" class="w-12 h-12 text-[var(--accent-color)] mx-auto mb-4 transition-transform group-hover:scale-110"></i>
+                        <h3 class="text-xl font-serif font-bold text-[var(--text-color)] mb-2">WhatsApp</h3><p class="text-gray-600">Chat with us</p>
+                    </a>`;
+
+                    document.getElementById('contact-info').innerHTML = contactHTML;
+                    document.getElementById('home-contact-info').innerHTML = contactHTML;
+
+                    const categorySelect = document.getElementById('modal-item-category');
+                    categorySelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+
+                    lucide.createIcons();
+                };
+
+                // --- EVENT LISTENERS ---
+                document.body.addEventListener('click', async (e) => {
+                    const navTarget = e.target.closest('[data-page]');
+                    if (navTarget) {
+                        const page = navTarget.dataset.page;
+                        const category = navTarget.dataset.category;
+                        if (category) {
+                            state.selectedCategory = category;
+                            document.querySelectorAll('.filter-btn').forEach(btn => {
+                                const isSelected = btn.dataset.category === category;
+                                btn.classList.toggle('bg-[var(--accent-color)]', isSelected);
+                                btn.classList.toggle('text-white', isSelected);
+                                btn.classList.toggle('bg-white', !isSelected);
+                                btn.classList.toggle('text-[var(--text-color)]', !isSelected);
+                            });
+                            renderGallery();
+                        }
+                        navigate(page);
+                    }
+
+                    const filterTarget = e.target.closest('.filter-btn');
+                    if (filterTarget) {
+                        state.selectedCategory = filterTarget.dataset.category;
+                        document.querySelectorAll('.filter-btn').forEach(btn => {
+                            const isSelected = btn === filterTarget;
+                            btn.classList.toggle('bg-[var(--accent-color)]', isSelected);
+                            btn.classList.toggle('text-white', isSelected);
+                            btn.classList.toggle('bg-white', !isSelected);
+                            btn.classList.toggle('text-[var(--text-color)]', !isSelected);
+                        });
+                        renderGallery();
+                    }
+
+                    const deleteTarget = e.target.closest('.delete-item-btn');
+                    if (deleteTarget) {
+                        const id = deleteTarget.dataset.id;
+                        deleteItem(id);
+                    }
+                });
+
+                document.getElementById('admin-login-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    if (!auth) return;
+                    const email = document.getElementById('admin-email-input').value;
+                    const password = document.getElementById('admin-password-input').value;
+                    const errorMsg = document.getElementById('login-error-msg');
+
+                    auth.signInWithEmailAndPassword(email, password)
+                        .catch(error => {
+                            console.error("Login failed:", error);
+                            errorMsg.textContent = "Login failed. Please check your credentials.";
+                            errorMsg.classList.remove('hidden');
+                        });
+                });
+
+                document.getElementById('logout-button').addEventListener('click', () => auth && auth.signOut());
+
+                document.getElementById('image-upload-input').addEventListener('change', (e) => {
+                    handleImageUpload(e.target.files);
+                    e.target.value = '';
+                });
+
+                document.getElementById('modal-save-btn').addEventListener('click', saveItemToFirebase);
+
+                document.getElementById('modal-cancel-btn').addEventListener('click', () => {
+                    document.getElementById('category-modal').classList.add('hidden');
+                    currentFileIndex++;
+                    processFileQueue();
+                });
+
+                const mobileMenu = document.getElementById('mobile-menu');
+                document.getElementById('mobile-menu-button').addEventListener('click', () => {
+                    mobileMenu.classList.toggle('hidden');
+                });
+                mobileMenu.addEventListener('click', (e) => {
+                    if (e.target.closest('.mobile-nav-link')) {
+                        mobileMenu.classList.add('hidden');
+                    }
+                });
+
+                // --- REAL-TIME LISTENERS & AUTH ---
+                if (auth) {
+                    auth.onAuthStateChanged(user => {
+                        state.isAdmin = !!user;
+                        if (user) {
+                            navigate('admin');
+                        } else {
+                            if (state.currentPage === 'admin') {
+                                navigate('home');
+                            }
+                        }
+                    });
+
+                    db.collection('jewelry').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+                        state.jewelry = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                        renderGallery();
+                        renderAdminItems();
+                        renderInitialContent(); // To update piece counts
+                    }, error => {
+                        console.error("Error fetching jewelry:", error);
+                    });
+                }
+
+                // --- ANIMATION & PRELOADER SETUP ---
+                const setupAnimations = () => {
+                    const scrollObserver = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                entry.target.classList.add('visible');
+                                scrollObserver.unobserve(entry.target);
+                            }
+                        });
+                    }, {threshold: 0.1});
+
+                    document.querySelectorAll('.animate-on-scroll').forEach(el => {
+                        scrollObserver.observe(el);
+                    });
+
+                    const preloader = document.getElementById('preloader');
+                    const nav = document.getElementById('main-nav');
+                    const hero = document.querySelector('#home-page .hero-section');
+
+                    // NEW: Failsafe to hide preloader even if Firebase fails
+                    setTimeout(() => {
+                        if (firebaseConfig.apiKey.startsWith("PASTE_YOUR")) {
+                            alert("CRITICAL ERROR: You have not added your Firebase configuration keys to the index.html file. The website cannot connect to the database. Please paste your firebaseConfig object.");
+                        }
+                        preloader.classList.add('hidden');
+                        document.body.classList.remove('loading');
+
+                        nav.classList.add('revealed');
+                        hero.classList.add('revealed');
+
+                        setTimeout(() => {
+                            preloader.style.display = 'none';
+                        }, 2000);
+                    }, 2500);
+                };
+
+                // --- INITIALIZE APP ---
+                renderInitialContent();
+                window.addEventListener('load', setupAnimations);
+            });
+        </script>
+    </body>
+
+</html>

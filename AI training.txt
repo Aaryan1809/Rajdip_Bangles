@@ -1,0 +1,84 @@
+AI Model Training Guide for Jewelry Classification
+This guide will walk you through the process of creating a genuine AI model that can accurately classify your jewelry images. The current system in the app is just a placeholder that relies on filenames, which is not very reliable. By following these steps, you can build a much more intelligent system.
+
+The Goal: From Keywords to True AI
+Our goal is to replace the simple filename-checker with a custom image classification model. This model will learn the visual characteristics of your different jewelry types (what a bangle looks like vs. what an earring looks like) and make predictions based on the image itself, not the filename.
+
+We'll use a free and incredibly user-friendly tool called Google's Teachable Machine. It lets you train a professional-quality model right in your browser.
+
+Step 1: Gather and Organize Your Image Dataset
+This is the most crucial step. The quality of your AI model depends entirely on the quality and quantity of the images you train it on.
+
+Create a Main Folder: On your computer, create a new folder named Jewelry_Dataset.
+
+Create Category Subfolders: Inside the Jewelry_Dataset folder, create a separate subfolder for each of your jewelry categories. The folder names must be exact:
+
+Bangles
+
+Kadas
+
+Bracelets
+
+Chains (Men)
+
+Chains (Women)
+
+Rings
+
+Earrings
+
+Populate the Folders: Now, fill these folders with your ornament images.
+
+Quantity is Key: Aim for at least 50-100 high-quality images for each category. The more images you provide, the smarter your model will become.
+
+Variety is Important: Use images with different backgrounds, lighting conditions, and angles. This helps the model learn to recognize the jewelry in various situations.
+
+Your final folder structure should look like this:
+
+Jewelry_Dataset/
+├── Bangles/
+│   ├── image001.jpg
+│   ├── image002.png
+│   └── ...
+├── Kadas/
+│   ├── image001.jpg
+│   └── ...
+├── Bracelets/
+│   ├── ...
+└── ... (and so on for all categories)
+
+Step 2: Train Your Model with Teachable Machine
+Now for the fun part! We will use your organized dataset to train the model.
+
+Go to Teachable Machine: Open your web browser and navigate to Teachable Machine.
+
+Start a New Project: Click on "Get Started" and then select "Image Project". Choose the "Standard image model" option.
+
+Create Your Categories (Classes):
+
+You will see a screen with "Class 1". Rename it to Bangles.
+
+Click the "Upload" button and select all the images from your Bangles subfolder.
+
+Click "Add a class" to create a new category. Name it Kadas and upload your images for that category.
+
+Repeat this process for all your jewelry categories until each one has its own class filled with images.
+
+Train the Model:
+
+Once all your images are uploaded into their correct classes, click the "Train Model" button on the right.
+
+Be patient! This process might take a few minutes. Teachable Machine is now "learning" from your images. Leave the tab open while it's training.
+
+Test Your Model:
+
+After training is complete, you will see a "Preview" panel.
+
+You can test your new model's accuracy by uploading an image of a new piece of jewelry (one that wasn't in the training set). The model will instantly tell you which category it thinks the item belongs to!
+
+Step 3: What's Next? (Integration)
+Once you are happy with your model's performance in Teachable Machine, you can click the "Export Model" button. This will give you a shareable link and code snippets to integrate your new AI model into your website.
+
+Replacing the old keyword-based function in the React app with your new Teachable Machine model is a more advanced step. For now, focus on creating a high-quality dataset and training an accurate model.
+
+When you have a trained model you're happy with, we can then work on integrating it into your website in a future step!

@@ -1,2 +1,2 @@
-# Rajdip_Bangles
-This is web application for my father's business
+# Rajdip_bangles_
+
